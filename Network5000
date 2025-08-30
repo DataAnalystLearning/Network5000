@@ -1,29 +1,31 @@
-    def refresh_topology_with_connections(self, canvas, ax, fig):
+def refresh_topology_with_connections(self, canvas, ax, fig):
         """Refresh topology visualization with/without port connections"""
         import networkx as nx
-        try:
+        import time
+        import os
+        #try:
             # Clear the current plot
-            ax.clear()
+            #ax.clear()
         
             # Rebuild the entire topology (reuse your existing drawing code)
-            self.redraw_complete_topology(ax)
+            #self.redraw_complete_topology(ax)
         
             # Add port connections if enabled
-            if self.show_port_connections.get() and hasattr(self, 'port_connections'):
-                if hasattr(self, 'node_positions'):
-                    self.draw_port_connections(ax, self.node_positions, show_labels=True)
+            #if self.show_port_connections.get() and hasattr(self, 'port_connections'):
+            #    if hasattr(self, 'node_positions'):
+            #        self.draw_port_connections(ax, self.node_positions, show_labels=True)
         
             # Update connection count
-            if hasattr(self, 'conn_count_label'):
-                conn_count = len(self.port_connections) if hasattr(self, 'port_connections') else 0
-                self.conn_count_label.config(text=f"({conn_count} connections)")
+            #if hasattr(self, 'conn_count_label'):
+            #    conn_count = len(self.port_connections) if hasattr(self, 'port_connections') else 0
+            #    self.conn_count_label.config(text=f"({conn_count} connections)")
         
             # Refresh the canvas
-            canvas.draw()
+            #canvas.draw()
         
-        except Exception as e:
-            messagebox.showerror("Visualization Error", f"Failed to refresh topology: {str(e)}")
-            print(f"DEBUG: Topology refresh error: {e}")
+        #except Exception as e:
+         #   messagebox.showerror("Visualization Error", f"Failed to refresh topology: {str(e)}")
+          #  print(f"DEBUG: Topology refresh error: {e}")
 
     def redraw_complete_topology(self, ax):
         """Redraw the complete topology (extracted from your show_topology method)"""
@@ -348,7 +350,7 @@
                         fontsize=14, fontweight='bold', pad=20)
         ax.axis('off')
 
-        def show_connection_details(self):
+    def show_connection_details(self):
             """Show detailed port connection information in a new window"""
     
             if not hasattr(self, 'port_connections') or not self.port_connections:
@@ -371,190 +373,190 @@
             self.create_connection_stats_tab(notebook)
     
             # Tab 3: Service Matrix
-            self.create_service_matrix_tab(notebook)
+            self.create_service_matrix_tab(notebook)   
             
-        def refresh_topology_display(self):
-            """Refresh the topology display"""
-            try:
-                # Check if we have the current topology window
-                if hasattr(self, 'current_topology_window'):
-                    # Close existing topology window
-                    try:
-                        self.current_topology_window.destroy()
-                    except:
-                        pass
+    def refresh_topology_display(self):
+        """Refresh the topology display"""
+        try:
+            # Check if we have the current topology window
+            if hasattr(self, 'current_topology_window'):
+                # Close existing topology window
+                try:
+                    self.current_topology_window.destroy()
+                except:
+                    pass
             
-                # Re-open topology window
-                self.show_topology()
+            # Re-open topology window
+            self.show_topology()
             
-            except Exception as e:
-                print(f"DEBUG: Error in refresh_topology_display: {e}")
-                messagebox.showerror("Refresh Error", f"Failed to refresh topology: {str(e)}")
+        except Exception as e:
+            print(f"DEBUG: Error in refresh_topology_display: {e}")
+            messagebox.showerror("Refresh Error", f"Failed to refresh topology: {str(e)}")    
 
-        def create_connection_list_tab(self, notebook):
-            """Create the connection list tab"""
+    def create_connection_list_tab(self, notebook):
+        """Create the connection list tab"""
     
-            list_frame = ttk.Frame(notebook)
-            notebook.add(list_frame, text="Connection List")
+        list_frame = ttk.Frame(notebook)
+        notebook.add(list_frame, text="Connection List")
     
-            # Create treeview for connections
-            columns = ('Source', 'Source Port', 'Destination', 'Dest Port', 'Service', 'Type')
-            conn_tree = ttk.Treeview(list_frame, columns=columns, show='headings', height=20)
+        # Create treeview for connections
+        columns = ('Source', 'Source Port', 'Destination', 'Dest Port', 'Service', 'Type')
+        conn_tree = ttk.Treeview(list_frame, columns=columns, show='headings', height=20)
     
-            # Configure columns
-            for col in columns:
-                conn_tree.heading(col, text=col)
-                conn_tree.column(col, width=120)
+        # Configure columns
+        for col in columns:
+            conn_tree.heading(col, text=col)
+            conn_tree.column(col, width=120)
     
-            # Add scrollbar
-            conn_scroll = ttk.Scrollbar(list_frame, orient=tk.VERTICAL, command=conn_tree.yview)
-            conn_tree.configure(yscrollcommand=conn_scroll.set)
+        # Add scrollbar
+        conn_scroll = ttk.Scrollbar(list_frame, orient=tk.VERTICAL, command=conn_tree.yview)
+        conn_tree.configure(yscrollcommand=conn_scroll.set)
     
-            # Populate with connection data
-            for conn_key, connection in self.port_connections.items():
-                source_port = connection.get('source_port', '')
-                if source_port == 'any' or source_port == 'dynamic':
-                    source_port = f"[{source_port}]"
+        # Populate with connection data
+        for conn_key, connection in self.port_connections.items():
+            source_port = connection.get('source_port', '')
+            if source_port == 'any' or source_port == 'dynamic':
+                source_port = f"[{source_port}]"
         
-                dest_port = connection.get('dest_port', '')
-                if dest_port == 'routing':
-                    dest_port = "[routing]"
+            dest_port = connection.get('dest_port', '')
+            if dest_port == 'routing':
+               dest_port = "[routing]"
         
-                conn_tree.insert('', tk.END, values=(
-                    connection['source_ip'],
-                    source_port,
-                    connection['dest_ip'],
-                    dest_port,
-                    connection.get('service', 'Unknown'),
-                    connection.get('connection_type', 'default').title()
-                ))
+            conn_tree.insert('', tk.END, values=(
+                connection['source_ip'],
+                source_port,
+                connection['dest_ip'],
+                dest_port,
+                connection.get('service', 'Unknown'),
+                connection.get('connection_type', 'default').title()
+            ))    
     
-            # Pack the treeview and scrollbar
-            conn_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(5, 0), pady=5)
-            conn_scroll.pack(side=tk.RIGHT, fill=tk.Y, pady=5)
+        # Pack the treeview and scrollbar
+        conn_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(5, 0), pady=5)
+        conn_scroll.pack(side=tk.RIGHT, fill=tk.Y, pady=5)    
 
-        def create_connection_stats_tab(self, notebook):    
-            """Create the connection statistics tab"""
+    def create_connection_stats_tab(self, notebook):    
+        """Create the connection statistics tab"""
     
-            stats_frame = ttk.Frame(notebook)
-            notebook.add(stats_frame, text="Statistics")
+        stats_frame = ttk.Frame(notebook)
+        notebook.add(stats_frame, text="Statistics")
     
-            # Get connection statistics
-            stats = self.get_connection_statistics()
+        # Get connection statistics
+        stats = self.get_connection_statistics()
     
-            # Create scrolled text widget for statistics
-            stats_text = scrolledtext.ScrolledText(stats_frame, wrap=tk.WORD, height=25, font=('Courier', 10))
-            stats_text.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+        # Create scrolled text widget for statistics
+        stats_text = scrolledtext.ScrolledText(stats_frame, wrap=tk.WORD, height=25, font=('Courier', 10))
+        stats_text.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)    
     
-            # Format statistics display
-            stats_content = "PORT CONNECTION ANALYSIS\n"
-            stats_content += "=" * 50 + "\n\n"
+        # Format statistics display
+        stats_content = "PORT CONNECTION ANALYSIS\n"
+        stats_content += "=" * 50 + "\n\n"
     
-            stats_content += f"Total Connections: {stats.get('total_connections', 0)}\n\n"
+        stats_content += f"Total Connections: {stats.get('total_connections', 0)}\n\n"
     
-            # Connection types
-            stats_content += "CONNECTIONS BY TYPE:\n"
-            stats_content += "-" * 25 + "\n"
-            for conn_type, count in stats.get('by_type', {}).items():
-                stats_content += f"{conn_type.title():20} {count:3d} connections\n"
+        # Connection types
+        stats_content += "CONNECTIONS BY TYPE:\n"
+        stats_content += "-" * 25 + "\n"
+        for conn_type, count in stats.get('by_type', {}).items():
+            stats_content += f"{conn_type.title():20} {count:3d} connections\n"
     
-            stats_content += "\n"
+        stats_content += "\n"
     
-            # Services
-            stats_content += "CONNECTIONS BY SERVICE:\n"
-            stats_content += "-" * 27 + "\n"
-            sorted_services = sorted(stats.get('by_service', {}).items(), key=lambda x: x[1], reverse=True)
-            for service, count in sorted_services[:15]:  # Top 15 services
-                stats_content += f"{service:20} {count:3d} connections\n"
+        # Services
+        stats_content += "CONNECTIONS BY SERVICE:\n"
+        stats_content += "-" * 27 + "\n"
+        sorted_services = sorted(stats.get('by_service', {}).items(), key=lambda x: x[1], reverse=True)
+        for service, count in sorted_services[:15]:  # Top 15 services
+            stats_content += f"{service:20} {count:3d} connections\n"
     
-            stats_content += "\n"
+        stats_content += "\n"
     
-            # Most connected devices
-            stats_content += "MOST CONNECTED DEVICES:\n"
-            stats_content += "-" * 26 + "\n"
-            for device_ip, count in stats.get('most_connected_devices', {}).items():
-                device_info = self.discovered_hosts.get(device_ip, {})
-                hostname = device_info.get('hostname', 'Unknown')
-                device_type = device_info.get('device_type', 'Unknown')
+        # Most connected devices
+        stats_content += "MOST CONNECTED DEVICES:\n"
+        stats_content += "-" * 26 + "\n"
+        for device_ip, count in stats.get('most_connected_devices', {}).items():
+            device_info = self.discovered_hosts.get(device_ip, {})
+            hostname = device_info.get('hostname', 'Unknown')
+            device_type = device_info.get('device_type', 'Unknown')
         
-                stats_content += f"{device_ip:15} {hostname:20} ({device_type})\n"
-                stats_content += f"{'':15} {count} connections\n\n"
+            stats_content += f"{device_ip:15} {hostname:20} ({device_type})\n"
+            stats_content += f"{'':15} {count} connections\n\n"
     
-            # Insert content
-            stats_text.insert(1.0, stats_content)
-            stats_text.config(state=tk.DISABLED)  # Make read-only
+        # Insert content
+        stats_text.insert(1.0, stats_content)
+        stats_text.config(state=tk.DISABLED)  # Make read-only    
 
-        def create_service_matrix_tab(self, notebook):
-            """Create the service matrix tab"""
+    def create_service_matrix_tab(self, notebook):
+        """Create the service matrix tab"""
     
-            matrix_frame = ttk.Frame(notebook)
-            notebook.add(matrix_frame, text="Service Matrix")
+        matrix_frame = ttk.Frame(notebook)
+        notebook.add(matrix_frame, text="Service Matrix")
     
-            # Create a matrix showing which devices offer which services
-            matrix_text = scrolledtext.ScrolledText(matrix_frame, wrap=tk.NONE, height=25, font=('Courier', 9))
-            matrix_text.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+        # Create a matrix showing which devices offer which services
+        matrix_text = scrolledtext.ScrolledText(matrix_frame, wrap=tk.NONE, height=25, font=('Courier', 9))
+        matrix_text.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
     
-            # Build service matrix
-            device_services = {}
-            all_services = set()
+        # Build service matrix
+        device_services = {}
+        all_services = set()
     
-            for connection in self.port_connections.values():
-                dest_ip = connection['dest_ip']
-                service = connection.get('service', 'Unknown')
+        for connection in self.port_connections.values():
+            dest_ip = connection['dest_ip']
+            service = connection.get('service', 'Unknown')
+       
+            if dest_ip not in device_services:
+                device_services[dest_ip] = set()
         
-                if dest_ip not in device_services:
-                    device_services[dest_ip] = set()
+            device_services[dest_ip].add(service)
+            all_services.add(service)
+    
+        # Sort services for consistent display
+        sorted_services = sorted(all_services)
+    
+        # Create matrix header
+        matrix_content = "SERVICE AVAILABILITY MATRIX\n"
+        matrix_content += "=" * 60 + "\n\n"
+        matrix_content += f"{'Device':<15} {'Hostname':<20} Services\n"
+        matrix_content += "-" * 80 + "\n"
+    
+        # Create matrix rows
+        for device_ip in sorted(device_services.keys()):
+            device_info = self.discovered_hosts.get(device_ip, {})
+            hostname = device_info.get('hostname', 'Unknown')[:18]
         
-                device_services[dest_ip].add(service)
-                all_services.add(service)
+            services = device_services[device_ip]
+            service_list = ", ".join(sorted(services)[:5])  # Show first 5 services
+            if len(services) > 5:
+                service_list += f" (+{len(services)-5} more)"
+       
+            matrix_content += f"{device_ip:<15} {hostname:<20} {service_list}\n"
     
-            # Sort services for consistent display
-            sorted_services = sorted(all_services)
-    
-            # Create matrix header
-            matrix_content = "SERVICE AVAILABILITY MATRIX\n"
-            matrix_content += "=" * 60 + "\n\n"
-            matrix_content += f"{'Device':<15} {'Hostname':<20} Services\n"
-            matrix_content += "-" * 80 + "\n"
-    
-            # Create matrix rows
-            for device_ip in sorted(device_services.keys()):
-                device_info = self.discovered_hosts.get(device_ip, {})
-                hostname = device_info.get('hostname', 'Unknown')[:18]
+        matrix_text.insert(1.0, matrix_content)
+        matrix_text.config(state=tk.DISABLED)  # Make read-only
         
-                services = device_services[device_ip]
-                service_list = ", ".join(sorted(services)[:5])  # Show first 5 services
-                if len(services) > 5:
-                    service_list += f" (+{len(services)-5} more)"
-        
-                matrix_content += f"{device_ip:<15} {hostname:<20} {service_list}\n"
-    
-            matrix_text.insert(1.0, matrix_content)
-            matrix_text.config(state=tk.DISABLED)  # Make read-only
-
     def create_legend_mappings(self):
-            """Enhanced device mappings including connection-aware colors"""
-            # This should be your existing create_legend_mappings method
-            # but you might want to add some connection-aware enhancements
+        """Enhanced device mappings including connection-aware colors"""
+        # This should be your existing create_legend_mappings method
+        # but you might want to add some connection-aware enhancements
     
-            return {
-                'Gateway (.1/.254)': {'color': '#E74C3C', 'priority': 1},
-                'Router/Gateway': {'color': '#E74C3C', 'priority': 2},
-                'Router/Switch': {'color': '#3498DB', 'priority': 3},
-                'Router/Network Device': {'color': '#3498DB', 'priority': 4},
-                'Router': {'color': '#E74C3C', 'priority': 5},
-                'Switch': {'color': '#2980B9', 'priority': 6},
-                'Access Point': {'color': '#8E44AD', 'priority': 7},
-                'Server/Web Device': {'color': '#27AE60', 'priority': 8},
-                'Windows Host': {'color': '#F39C12', 'priority': 9},
-                'Linux Host': {'color': '#E67E22', 'priority': 10},
-                'IP Camera/CCTV': {'color': '#9B59B6', 'priority': 11},
-                'IP Camera': {'color': '#9B59B6', 'priority': 12},
-                'Mobile Device': {'color': '#16A085', 'priority': 13},
-                'Network Device': {'color': '#34495E', 'priority': 14},
-                'Host (Filtered/Mobile)': {'color': '#95A5A6', 'priority': 15},
-                'Unknown': {'color': '#BDC3C7', 'priority': 16}
-            }
+        return {
+            'Gateway (.1/.254)': {'color': '#E74C3C', 'priority': 1},
+            'Router/Gateway': {'color': '#E74C3C', 'priority': 2},
+            'Router/Switch': {'color': '#3498DB', 'priority': 3},
+            'Router/Network Device': {'color': '#3498DB', 'priority': 4},
+            'Router': {'color': '#E74C3C', 'priority': 5},
+            'Switch': {'color': '#2980B9', 'priority': 6},
+            'Access Point': {'color': '#8E44AD', 'priority': 7},
+            'Server/Web Device': {'color': '#27AE60', 'priority': 8},
+            'Windows Host': {'color': '#F39C12', 'priority': 9},
+            'Linux Host': {'color': '#E67E22', 'priority': 10},
+            'IP Camera/CCTV': {'color': '#9B59B6', 'priority': 11},
+            'IP Camera': {'color': '#9B59B6', 'priority': 12},
+            'Mobile Device': {'color': '#16A085', 'priority': 13},
+            'Network Device': {'color': '#34495E', 'priority': 14},
+            'Host (Filtered/Mobile)': {'color': '#95A5A6', 'priority': 15},
+            'Unknown': {'color': '#BDC3C7', 'priority': 16}
+        }
 
     # MODIFICATION TO YOUR EXISTING scan_complete METHOD
     def scan_complete(self):
