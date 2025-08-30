@@ -1,5 +1,6 @@
     def refresh_topology_with_connections(self, canvas, ax, fig):
         """Refresh topology visualization with/without port connections"""
+        import networkx as nx
         try:
             # Clear the current plot
             ax.clear()
@@ -79,46 +80,6 @@
         # [COPY ALL YOUR EXISTING LABEL DRAWING CODE]                        This has been done
         # [COPY ALL YOUR EXISTING LEGEND CODE]                               This has been done
         
-    def redraw_complete_topology(self, ax):
-        """Redraw the complete topology (extracted from your show_topology method)"""
-    
-        if not self.discovered_hosts:
-            ax.text(0.5, 0.5, 'No scan data available', 
-                ha='center', va='center', transform=ax.transAxes,
-                fontsize=14, color='gray')
-            return
-    
-        # Build the network topology
-        self.build_network_graph()
-    
-        if not self.network_graph.nodes():
-            ax.text(0.5, 0.5, 'No network topology available', 
-                ha='center', va='center', transform=ax.transAxes,
-                fontsize=14, color='gray')
-            return
-    
-        # Enhanced color and shape mappings
-        device_mappings = self.create_legend_mappings()
-    
-        # Define node shapes for different device types
-        shape_map = {
-            'Gateway (.1/.254)': 'D',      # Diamond
-            'Router/Gateway': 'D',          # Diamond  
-            'Router/Switch': 'D',           # Diamond
-            'Router/Network Device': 'D',   # Diamond
-            'Router': 'D',                  # Diamond
-            'Switch': 's',                  # Square
-            'Access Point': '^',            # Triangle
-            'Server/Web Device': 's',       # Square
-            'Windows Host': 'o',            # Circle
-            'Linux Host': 'o',              # Circle
-            'IP Camera/CCTV': 'v',          # Inverted triangle
-            'IP Camera': 'v',               # Inverted triangle
-            'Mobile Device': 'o',           # Circle (smaller)
-            'Network Device': 'h',          # Hexagon
-            'Host (Filtered/Mobile)': 'o',  # Circle
-            'Unknown': 'o'                  # Circle
-        }
     
         # Identify gateway nodes and categorize all nodes
         gateway_nodes = []
@@ -571,7 +532,7 @@
             matrix_text.insert(1.0, matrix_content)
             matrix_text.config(state=tk.DISABLED)  # Make read-only
 
-        def create_legend_mappings(self):
+    def create_legend_mappings(self):
             """Enhanced device mappings including connection-aware colors"""
             # This should be your existing create_legend_mappings method
             # but you might want to add some connection-aware enhancements
@@ -595,97 +556,97 @@
                 'Unknown': {'color': '#BDC3C7', 'priority': 16}
             }
 
-        # MODIFICATION TO YOUR EXISTING scan_complete METHOD
-        def scan_complete(self):
-            """Called when scan is complete - now includes port connection detection"""
-            self.scanning = False
-            self.progress.stop()
-            self.scan_button.config(state=tk.NORMAL)
-            self.stop_button.config(state=tk.DISABLED)
+    # MODIFICATION TO YOUR EXISTING scan_complete METHOD
+    def scan_complete(self):
+        """Called when scan is complete - now includes port connection detection"""
+        self.scanning = False
+        self.progress.stop()
+        self.scan_button.config(state=tk.NORMAL)
+        self.stop_button.config(state=tk.DISABLED)
     
-            if self.discovered_hosts:
-                self.export_button.config(state=tk.NORMAL)
-                self.view_map_button.config(state=tk.NORMAL)
-                self.update_results()
+        if self.discovered_hosts:
+            self.export_button.config(state=tk.NORMAL)
+            self.view_map_button.config(state=tk.NORMAL)
+            self.update_results()
         
-                # ADDITION: Detect port connections after scan completes
-                print("DEBUG: Scan complete, analyzing port connections...")
-                try:
-                    self.detect_port_connections()
-                    connection_count = len(self.port_connections) if hasattr(self, 'port_connections') else 0
-                    print(f"DEBUG: Detected {connection_count} port connections")
-                except Exception as e:
-                    print(f"DEBUG: Port connection detection failed: {e}")
-                    self.port_connections = {}
+            # ADDITION: Detect port connections after scan completes
+            print("DEBUG: Scan complete, analyzing port connections...")
+            try:
+                self.detect_port_connections()
+                connection_count = len(self.port_connections) if hasattr(self, 'port_connections') else 0
+                print(f"DEBUG: Detected {connection_count} port connections")
+            except Exception as e:
+                print(f"DEBUG: Port connection detection failed: {e}")
+                self.port_connections = {}
         
-                self.status_var.set(f"Scan complete. Found {len(self.discovered_hosts)} hosts, {len(self.port_connections) if hasattr(self, 'port_connections') else 0} connections.")
-            else:
-                self.status_var.set("Scan complete. No hosts found.")
+            self.status_var.set(f"Scan complete. Found {len(self.discovered_hosts)} hosts, {len(self.port_connections) if hasattr(self, 'port_connections') else 0} connections.")
+        else:
+            self.status_var.set("Scan complete. No hosts found.")            
     
    
-        # HELPER METHOD FOR PORT CONNECTION EXPORT
-        def export_port_connections_csv(self):
-            """Export port connections to CSV file"""
+    # HELPER METHOD FOR PORT CONNECTION EXPORT
+    def export_port_connections_csv(self):
+        """Export port connections to CSV file"""
     
-            if not hasattr(self, 'port_connections') or not self.port_connections:
-                messagebox.showwarning("Export Warning", "No port connections to export.")
-                return
+        if not hasattr(self, 'port_connections') or not self.port_connections:
+            messagebox.showwarning("Export Warning", "No port connections to export.")
+            return
     
-            filename = filedialog.asksaveasfilename(
-                defaultextension=".csv",
-                filetypes=[("CSV files", "*.csv"), ("All files", "*.*")],
-                title="Export Port Connections"
-            )
+        filename = filedialog.asksaveasfilename(
+            defaultextension=".csv",
+            filetypes=[("CSV files", "*.csv"), ("All files", "*.*")],
+            title="Export Port Connections"
+        )
     
-            if filename:
-                try:
-                    import csv
-                    with open(filename, 'w', newline='', encoding='utf-8') as csvfile:
-                        fieldnames = ['Source_IP', 'Source_Port', 'Destination_IP', 'Destination_Port', 
-                                    'Service', 'Connection_Type', 'Bidirectional', 'Strength']
-                        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+        if filename:
+            try:
+                import csv
+                with open(filename, 'w', newline='', encoding='utf-8') as csvfile:
+                    fieldnames = ['Source_IP', 'Source_Port', 'Destination_IP', 'Destination_Port', 
+                               'Service', 'Connection_Type', 'Bidirectional', 'Strength']
+                    writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
                 
-                        writer.writeheader()
-                        for connection in self.port_connections.values():
-                            writer.writerow({
-                                'Source_IP': connection['source_ip'],
-                                'Source_Port': connection.get('source_port', ''),
-                                'Destination_IP': connection['dest_ip'], 
-                                'Destination_Port': connection.get('dest_port', ''),
-                                'Service': connection.get('service', ''),
-                                'Connection_Type': connection.get('connection_type', ''),
-                                'Bidirectional': connection.get('bidirectional', False),
-                                'Strength': connection.get('strength', 0.5)
-                            })
+                    writer.writeheader()
+                    for connection in self.port_connections.values():
+                        writer.writerow({
+                            'Source_IP': connection['source_ip'],
+                            'Source_Port': connection.get('source_port', ''),
+                            'Destination_IP': connection['dest_ip'], 
+                            'Destination_Port': connection.get('dest_port', ''),
+                            'Service': connection.get('service', ''),
+                            'Connection_Type': connection.get('connection_type', ''),
+                            'Bidirectional': connection.get('bidirectional', False),
+                            'Strength': connection.get('strength', 0.5)
+                        })    
             
-                    messagebox.showinfo("Export Success", f"Port connections exported to {filename}")
+                messagebox.showinfo("Export Success", f"Port connections exported to {filename}")
             
-                except Exception as e:
-                    messagebox.showerror("Export Error", f"Failed to export port connections: {str(e)}")
-
-        def export_topology_with_connections_png(self, fig):
-            """Export topology with port connections as PNG"""
-            filename = filedialog.asksaveasfilename(
-                defaultextension=".png",
-                filetypes=[("PNG files", "*.png"), ("All files", "*.*")],
-                title="Export Network Topology with Connections"
-            )
-    
-            if filename:
-                try:
-                    # Ensure port connections are visible before export
-                    if hasattr(self, 'show_port_connections') and self.show_port_connections.get():
-                        fig.savefig(filename, dpi=300, bbox_inches='tight', 
-                                facecolor='white', edgecolor='none')
-                    else:
-                        fig.savefig(filename, dpi=300, bbox_inches='tight',
-                                facecolor='white', edgecolor='none') 
-            
-                    messagebox.showinfo("Export Success", f"Topology with connections saved as {filename}")
-                except Exception as e:
-                    messagebox.showerror("Export Error", f"Failed to export image: {str(e)}")
-
+            except Exception as e:
+                messagebox.showerror("Export Error", f"Failed to export port connections: {str(e)}")        
         
+
+    def export_topology_with_connections_png(self, fig):
+        """Export topology with port connections as PNG"""
+        filename = filedialog.asksaveasfilename(
+            defaultextension=".png",
+            filetypes=[("PNG files", "*.png"), ("All files", "*.*")],
+            title="Export Network Topology with Connections"
+        )
+    
+        if filename:
+            try:
+               # Ensure port connections are visible before export
+                if hasattr(self, 'show_port_connections') and self.show_port_connections.get():
+                    fig.savefig(filename, dpi=300, bbox_inches='tight', 
+                            facecolor='white', edgecolor='none')
+                else:
+                    fig.savefig(filename, dpi=300, bbox_inches='tight',
+                            facecolor='white', edgecolor='none') 
+            
+                messagebox.showinfo("Export Success", f"Topology with connections saved as {filename}")
+            except Exception as e:
+                messagebox.showerror("Export Error", f"Failed to export image: {str(e)}")        
+                
     
 def main():
     root = tk.Tk()
