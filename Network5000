@@ -1,0 +1,697 @@
+    def refresh_topology_with_connections(self, canvas, ax, fig):
+        """Refresh topology visualization with/without port connections"""
+        try:
+            # Clear the current plot
+            ax.clear()
+        
+            # Rebuild the entire topology (reuse your existing drawing code)
+            self.redraw_complete_topology(ax)
+        
+            # Add port connections if enabled
+            if self.show_port_connections.get() and hasattr(self, 'port_connections'):
+                if hasattr(self, 'node_positions'):
+                    self.draw_port_connections(ax, self.node_positions, show_labels=True)
+        
+            # Update connection count
+            if hasattr(self, 'conn_count_label'):
+                conn_count = len(self.port_connections) if hasattr(self, 'port_connections') else 0
+                self.conn_count_label.config(text=f"({conn_count} connections)")
+        
+            # Refresh the canvas
+            canvas.draw()
+        
+        except Exception as e:
+            messagebox.showerror("Visualization Error", f"Failed to refresh topology: {str(e)}")
+            print(f"DEBUG: Topology refresh error: {e}")
+
+    def redraw_complete_topology(self, ax):
+        """Redraw the complete topology (extracted from your show_topology method)"""
+    
+        # This should contain all your existing topology drawing code
+        # from show_topology method, but extracted into a separate method
+        # so it can be reused for refreshing
+    
+        if not self.discovered_hosts:
+            ax.text(0.5, 0.5, 'No scan data available', 
+                ha='center', va='center', transform=ax.transAxes,
+                fontsize=14, color='gray')
+            return
+    
+        # Build the network topology
+        self.build_network_graph()
+    
+        if not self.network_graph.nodes():
+            ax.text(0.5, 0.5, 'No network topology available', 
+                ha='center', va='center', transform=ax.transAxes,
+                fontsize=14, color='gray')
+            return
+    
+        # [INSERT YOUR EXISTING TOPOLOGY DRAWING CODE HERE]
+        # This includes: device mappings, node categorization, layout, 
+        # drawing nodes by shape, edges, labels, legend, etc.
+    
+        # Enhanced color and shape mappings (from your existing code)
+        device_mappings = self.create_legend_mappings()
+    
+        # Define node shapes (from your existing code)
+        shape_map = {
+            'Gateway (.1/.254)': 'D',      # Diamond
+            'Router/Gateway': 'D',          # Diamond  
+            'Router/Switch': 'D',           # Diamond
+            'Router/Network Device': 'D',   # Diamond
+            'Router': 'D',                  # Diamond
+            'Switch': 's',                  # Square
+            'Access Point': '^',            # Triangle
+            'Server/Web Device': 's',       # Square
+            'Windows Host': 'o',            # Circle
+            'Linux Host': 'o',              # Circle
+            'IP Camera/CCTV': 'v',          # Inverted triangle
+            'IP Camera': 'v',               # Inverted triangle
+            'Mobile Device': 'o',           # Circle (smaller)
+            'Network Device': 'h',          # Hexagon
+            'Host (Filtered/Mobile)': 'o',  # Circle
+            'Unknown': 'o'                  # Circle
+        }
+    
+        # [COPY ALL YOUR EXISTING NODE CATEGORIZATION AND POSITIONING CODE]  This has been done
+        # [COPY ALL YOUR EXISTING NODE DRAWING CODE]                         This has been done
+        # [COPY ALL YOUR EXISTING EDGE DRAWING CODE]                         This has been done
+        # [COPY ALL YOUR EXISTING LABEL DRAWING CODE]                        This has been done
+        # [COPY ALL YOUR EXISTING LEGEND CODE]                               This has been done
+        
+    def redraw_complete_topology(self, ax):
+        """Redraw the complete topology (extracted from your show_topology method)"""
+    
+        if not self.discovered_hosts:
+            ax.text(0.5, 0.5, 'No scan data available', 
+                ha='center', va='center', transform=ax.transAxes,
+                fontsize=14, color='gray')
+            return
+    
+        # Build the network topology
+        self.build_network_graph()
+    
+        if not self.network_graph.nodes():
+            ax.text(0.5, 0.5, 'No network topology available', 
+                ha='center', va='center', transform=ax.transAxes,
+                fontsize=14, color='gray')
+            return
+    
+        # Enhanced color and shape mappings
+        device_mappings = self.create_legend_mappings()
+    
+        # Define node shapes for different device types
+        shape_map = {
+            'Gateway (.1/.254)': 'D',      # Diamond
+            'Router/Gateway': 'D',          # Diamond  
+            'Router/Switch': 'D',           # Diamond
+            'Router/Network Device': 'D',   # Diamond
+            'Router': 'D',                  # Diamond
+            'Switch': 's',                  # Square
+            'Access Point': '^',            # Triangle
+            'Server/Web Device': 's',       # Square
+            'Windows Host': 'o',            # Circle
+            'Linux Host': 'o',              # Circle
+            'IP Camera/CCTV': 'v',          # Inverted triangle
+            'IP Camera': 'v',               # Inverted triangle
+            'Mobile Device': 'o',           # Circle (smaller)
+            'Network Device': 'h',          # Hexagon
+            'Host (Filtered/Mobile)': 'o',  # Circle
+            'Unknown': 'o'                  # Circle
+        }
+    
+        # Identify gateway nodes and categorize all nodes
+        gateway_nodes = []
+        infrastructure_nodes = []  # Switches, APs, servers
+        client_nodes = []          # End devices
+
+        for node in self.network_graph.nodes():
+            last_octet = int(node.split('.')[-1])
+            device_type = self.network_graph.nodes[node].get('device_type', 'Unknown')
+
+            # Consider as gateway if: ends in .1 or .254, OR is identified as router/gateway
+            is_gateway = (last_octet in [1, 254] or 
+                        'Gateway' in device_type or 
+                        ('Router' in device_type and 'Network Device' not in device_type))
+
+            if is_gateway:
+                gateway_nodes.append(node)
+            elif any(keyword in device_type for keyword in ['Switch', 'Access Point', 'Server', 'Camera']):
+                infrastructure_nodes.append(node)
+            else:
+                client_nodes.append(node)
+
+        # Create hierarchical layout
+        pos = {}
+        all_nodes = list(self.network_graph.nodes())
+
+        if len(gateway_nodes) > 0:
+            # Position gateways at the top
+            gateway_width = max(len(gateway_nodes) * 2, 4)
+            for i, gateway in enumerate(gateway_nodes):
+                x_pos = (i - (len(gateway_nodes) - 1) / 2) * (gateway_width / max(len(gateway_nodes), 1))
+                pos[gateway] = (x_pos, 3.0)  # Top level
+
+            # Position infrastructure devices in middle layer
+            if infrastructure_nodes:
+                infra_y_level = 2.0
+                if len(infrastructure_nodes) == 1:
+                    pos[infrastructure_nodes[0]] = (0, infra_y_level)
+                else:
+                    infra_width = len(infrastructure_nodes) * 1.5
+                    for i, device in enumerate(infrastructure_nodes):
+                        x_pos = (i - (len(infrastructure_nodes) - 1) / 2) * (infra_width / len(infrastructure_nodes))
+                        pos[device] = (x_pos, infra_y_level)
+
+            # Position client devices in grid layout at bottom
+            if client_nodes:
+                client_y_level = 0.8
+    
+                # Calculate grid dimensions
+                total_clients = len(client_nodes)
+                if total_clients <= 4:
+                    cols = total_clients
+                    rows = 1
+                elif total_clients <= 9:
+                    cols = 3
+                    rows = (total_clients + cols - 1) // cols
+                else:
+                    cols = max(4, int(total_clients ** 0.6))
+                    rows = (total_clients + cols - 1) // cols
+    
+                # Calculate spacing
+                grid_width = cols * 1.8
+                grid_height = rows * 0.6
+    
+                for i, device in enumerate(client_nodes):
+                    row = i // cols
+                    col = i % cols
+        
+                    x_pos = (col - (cols - 1) / 2) * (grid_width / max(cols, 1))
+                    y_pos = client_y_level - (row * grid_height / max(rows, 1))
+        
+                    pos[device] = (x_pos, y_pos)
+
+        else:
+            # No gateways found - use spring layout
+            try:
+                pos = nx.spring_layout(self.network_graph, k=3, iterations=50)
+                if not pos:
+                    # Fallback to grid layout
+                    nodes = list(self.network_graph.nodes())
+                    cols = max(1, int(len(nodes) ** 0.5))
+                    pos = {}
+                    for i, node in enumerate(nodes):
+                        row = i // cols
+                        col = i % cols
+                        pos[node] = (col * 2, -row * 1.5)
+            except Exception as e:
+                print(f"DEBUG: Layout failed: {e}")
+                nodes = list(self.network_graph.nodes())
+                cols = max(1, int(len(nodes) ** 0.5))
+                pos = {}
+                for i, node in enumerate(nodes):
+                    row = i // cols
+                    col = i % cols
+                    pos[node] = (col * 2, -row * 1.5)
+
+        # Ensure all nodes have positions
+        for node in all_nodes:
+            if node not in pos:
+                print(f"DEBUG: Node {node} missing position, assigning fallback")
+                pos[node] = (0, 0)
+
+        # Store positions for later use
+        self.node_positions = pos.copy()
+
+        # Group nodes by shape and draw them separately
+        nodes_by_shape = {}
+        for node in self.network_graph.nodes():
+            device_type = self.network_graph.nodes[node].get('device_type', 'Unknown')
+            shape = shape_map.get(device_type, 'o')
+
+            if shape not in nodes_by_shape:
+                nodes_by_shape[shape] = []
+            nodes_by_shape[shape].append(node)
+
+        # Draw each shape group separately
+        for shape, nodes in nodes_by_shape.items():
+            if not nodes:
+                continue
+    
+            # Prepare colors and sizes for this shape group
+            node_colors = []
+            node_sizes = []
+
+            for node in nodes:
+                device_type = self.network_graph.nodes[node].get('device_type', 'Unknown')
+                mac_vendor = self.network_graph.nodes[node].get('mac_vendor', '')
+                open_ports = self.network_graph.nodes[node].get('open_ports', [])
+    
+                # Color selection with vendor-based variants
+                base_color = device_mappings.get(device_type, {}).get('color', '#95A5A6')
+    
+                # Vendor-based color variations
+                vendor_colors = {
+                    'apple': '#007AFF',      # Apple blue
+                    'samsung': '#1428A0',    # Samsung blue  
+                    'google': '#4285F4',     # Google blue
+                    'microsoft': '#0078D4',  # Microsoft blue
+                    'cisco': '#049FD9',      # Cisco blue
+                    'netgear': '#F7941D',    # Netgear orange
+                    'tp-link': '#4CC35E',    # TP-Link green
+                    'asus': '#0066CC',       # ASUS blue
+                    'linksys': '#003366',    # Linksys dark blue
+                    'ubiquiti': '#0066CC'    # Ubiquiti blue
+                }
+    
+                # Check if we can apply vendor-specific coloring
+                vendor_color = None
+                if mac_vendor:
+                    vendor_lower = mac_vendor.lower()
+                    for vendor, color in vendor_colors.items():
+                        if vendor in vendor_lower:
+                            vendor_color = color
+                            break
+    
+                node_colors.append(vendor_color if vendor_color else base_color)
+    
+                # Smart sizing based on device type and open ports
+                base_size = 1000
+    
+                if node in gateway_nodes:
+                    size = 2000  # Largest for gateways
+                elif device_type in ['Server/Web Device', 'Switch', 'Router/Switch']:
+                    size = 1600  # Large for infrastructure
+                elif device_type in ['IP Camera/CCTV', 'Access Point']:
+                    size = 1200  # Medium for specialized devices
+                elif device_type == 'Mobile Device':
+                    size = 800   # Smaller for mobile devices
+                else:
+                    # Scale based on number of open ports (more ports = more important)
+                    port_count = len(open_ports) if open_ports else 0
+                    size = base_size + (port_count * 50)
+                    size = min(size, 1400)  # Cap the maximum size
+    
+                node_sizes.append(size)
+
+            # Create position dict for this shape group
+            shape_pos = {node: pos[node] for node in nodes}
+
+            # Draw nodes with the specific shape
+            nx.draw_networkx_nodes(self.network_graph.subgraph(nodes), shape_pos,
+                                node_color=node_colors,
+                                node_size=node_sizes,
+                                node_shape=shape,
+                                alpha=0.8,
+                                edgecolors='black',
+                                linewidths=1,
+                                ax=ax)
+
+        # Draw edges with enhanced styling  
+        if self.network_graph.edges():
+            nx.draw_networkx_edges(self.network_graph, pos,
+                                alpha=0.4,
+                                edge_color='#666666',
+                                width=1.5,
+                                style='solid',
+                                ax=ax)
+
+        # Enhanced labels
+        labels = {}
+        for node in self.network_graph.nodes():
+            hostname = self.network_graph.nodes[node].get('hostname', node)
+            device_type = self.network_graph.nodes[node].get('device_type', 'Unknown')
+            mac_vendor = self.network_graph.nodes[node].get('mac_vendor', '')
+
+            # Truncate long hostnames   
+            if len(hostname) > 15:
+                hostname = hostname[:12] + "..."
+
+            # Create label with device type indicator
+            if node in gateway_nodes:
+                labels[node] = f"[GW] {hostname}\n({node})"
+            elif 'Server' in device_type:
+                labels[node] = f"[SRV] {hostname}\n({node})" 
+            elif 'Camera' in device_type:
+                labels[node] = f"[CAM] {hostname}\n({node})"
+            elif 'Mobile' in device_type:
+                labels[node] = f"[MOB] {hostname}\n({node})"
+            elif mac_vendor and mac_vendor != 'Unknown':
+                labels[node] = f"{hostname}\n({mac_vendor})"
+            else:
+                labels[node] = f"{hostname}\n({node})"
+
+        nx.draw_networkx_labels(self.network_graph, pos, labels, 
+                            font_size=8, font_weight='bold', ax=ax)
+
+        # Enhanced legend with shapes and colors
+        existing_types = set()
+        for node in self.network_graph.nodes():
+            device_type = self.network_graph.nodes[node].get('device_type', 'Unknown')
+            existing_types.add(device_type)
+
+        legend_elements = []
+        from matplotlib.lines import Line2D
+
+        # Sort device types by priority for consistent legend ordering
+        sorted_types = sorted(existing_types, 
+                            key=lambda x: device_mappings.get(x, {}).get('priority', 99))
+
+        for device_type in sorted_types:
+            color = device_mappings.get(device_type, {}).get('color', '#95A5A6')
+            shape = shape_map.get(device_type, 'o')
+
+            # Map NetworkX shapes to matplotlib marker symbols
+            marker_map = {'D': 'D', 's': 's', '^': '^', 'v': 'v', 'h': 'h', 'o': 'o'}
+            marker = marker_map.get(shape, 'o')
+
+            legend_elements.append(Line2D([0], [0], marker=marker, color='w',
+                                        markerfacecolor=color, 
+                                        markeredgecolor='black',
+                                        markeredgewidth=1,
+                                        markersize=10,
+                                        label=device_type))
+
+        if legend_elements:
+            ax.legend(handles=legend_elements, loc='upper left', frameon=True,
+                    fancybox=True, shadow=True, fontsize=9)
+
+        # Set title
+        ax.set_title(f"Network Topology with Port Connections - {self.network_entry.get()}\n(Click devices for details)", 
+                    fontsize=14, fontweight='bold', pad=20)
+        ax.axis('off')
+    
+            # Set title
+        ax.set_title(f"Network Topology with Port Connections - {self.network_entry.get()}\n(Click devices for details)", 
+                        fontsize=14, fontweight='bold', pad=20)
+        ax.axis('off')
+
+        def show_connection_details(self):
+            """Show detailed port connection information in a new window"""
+    
+            if not hasattr(self, 'port_connections') or not self.port_connections:
+                messagebox.showinfo("Connection Details", "No port connections detected.\n\nRun a network scan first, then view the topology.")
+                return
+    
+            # Create details window
+            details_window = tk.Toplevel(self.root)
+            details_window.title("Port Connection Details")
+            details_window.geometry("800x600")
+    
+            # Create notebook for different views
+            notebook = ttk.Notebook(details_window)
+            notebook.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+    
+            # Tab 1: Connection List
+            self.create_connection_list_tab(notebook)
+    
+            # Tab 2: Connection Statistics
+            self.create_connection_stats_tab(notebook)
+    
+            # Tab 3: Service Matrix
+            self.create_service_matrix_tab(notebook)
+            
+        def refresh_topology_display(self):
+            """Refresh the topology display"""
+            try:
+                # Check if we have the current topology window
+                if hasattr(self, 'current_topology_window'):
+                    # Close existing topology window
+                    try:
+                        self.current_topology_window.destroy()
+                    except:
+                        pass
+            
+                # Re-open topology window
+                self.show_topology()
+            
+            except Exception as e:
+                print(f"DEBUG: Error in refresh_topology_display: {e}")
+                messagebox.showerror("Refresh Error", f"Failed to refresh topology: {str(e)}")
+
+        def create_connection_list_tab(self, notebook):
+            """Create the connection list tab"""
+    
+            list_frame = ttk.Frame(notebook)
+            notebook.add(list_frame, text="Connection List")
+    
+            # Create treeview for connections
+            columns = ('Source', 'Source Port', 'Destination', 'Dest Port', 'Service', 'Type')
+            conn_tree = ttk.Treeview(list_frame, columns=columns, show='headings', height=20)
+    
+            # Configure columns
+            for col in columns:
+                conn_tree.heading(col, text=col)
+                conn_tree.column(col, width=120)
+    
+            # Add scrollbar
+            conn_scroll = ttk.Scrollbar(list_frame, orient=tk.VERTICAL, command=conn_tree.yview)
+            conn_tree.configure(yscrollcommand=conn_scroll.set)
+    
+            # Populate with connection data
+            for conn_key, connection in self.port_connections.items():
+                source_port = connection.get('source_port', '')
+                if source_port == 'any' or source_port == 'dynamic':
+                    source_port = f"[{source_port}]"
+        
+                dest_port = connection.get('dest_port', '')
+                if dest_port == 'routing':
+                    dest_port = "[routing]"
+        
+                conn_tree.insert('', tk.END, values=(
+                    connection['source_ip'],
+                    source_port,
+                    connection['dest_ip'],
+                    dest_port,
+                    connection.get('service', 'Unknown'),
+                    connection.get('connection_type', 'default').title()
+                ))
+    
+            # Pack the treeview and scrollbar
+            conn_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(5, 0), pady=5)
+            conn_scroll.pack(side=tk.RIGHT, fill=tk.Y, pady=5)
+
+        def create_connection_stats_tab(self, notebook):    
+            """Create the connection statistics tab"""
+    
+            stats_frame = ttk.Frame(notebook)
+            notebook.add(stats_frame, text="Statistics")
+    
+            # Get connection statistics
+            stats = self.get_connection_statistics()
+    
+            # Create scrolled text widget for statistics
+            stats_text = scrolledtext.ScrolledText(stats_frame, wrap=tk.WORD, height=25, font=('Courier', 10))
+            stats_text.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+    
+            # Format statistics display
+            stats_content = "PORT CONNECTION ANALYSIS\n"
+            stats_content += "=" * 50 + "\n\n"
+    
+            stats_content += f"Total Connections: {stats.get('total_connections', 0)}\n\n"
+    
+            # Connection types
+            stats_content += "CONNECTIONS BY TYPE:\n"
+            stats_content += "-" * 25 + "\n"
+            for conn_type, count in stats.get('by_type', {}).items():
+                stats_content += f"{conn_type.title():20} {count:3d} connections\n"
+    
+            stats_content += "\n"
+    
+            # Services
+            stats_content += "CONNECTIONS BY SERVICE:\n"
+            stats_content += "-" * 27 + "\n"
+            sorted_services = sorted(stats.get('by_service', {}).items(), key=lambda x: x[1], reverse=True)
+            for service, count in sorted_services[:15]:  # Top 15 services
+                stats_content += f"{service:20} {count:3d} connections\n"
+    
+            stats_content += "\n"
+    
+            # Most connected devices
+            stats_content += "MOST CONNECTED DEVICES:\n"
+            stats_content += "-" * 26 + "\n"
+            for device_ip, count in stats.get('most_connected_devices', {}).items():
+                device_info = self.discovered_hosts.get(device_ip, {})
+                hostname = device_info.get('hostname', 'Unknown')
+                device_type = device_info.get('device_type', 'Unknown')
+        
+                stats_content += f"{device_ip:15} {hostname:20} ({device_type})\n"
+                stats_content += f"{'':15} {count} connections\n\n"
+    
+            # Insert content
+            stats_text.insert(1.0, stats_content)
+            stats_text.config(state=tk.DISABLED)  # Make read-only
+
+        def create_service_matrix_tab(self, notebook):
+            """Create the service matrix tab"""
+    
+            matrix_frame = ttk.Frame(notebook)
+            notebook.add(matrix_frame, text="Service Matrix")
+    
+            # Create a matrix showing which devices offer which services
+            matrix_text = scrolledtext.ScrolledText(matrix_frame, wrap=tk.NONE, height=25, font=('Courier', 9))
+            matrix_text.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+    
+            # Build service matrix
+            device_services = {}
+            all_services = set()
+    
+            for connection in self.port_connections.values():
+                dest_ip = connection['dest_ip']
+                service = connection.get('service', 'Unknown')
+        
+                if dest_ip not in device_services:
+                    device_services[dest_ip] = set()
+        
+                device_services[dest_ip].add(service)
+                all_services.add(service)
+    
+            # Sort services for consistent display
+            sorted_services = sorted(all_services)
+    
+            # Create matrix header
+            matrix_content = "SERVICE AVAILABILITY MATRIX\n"
+            matrix_content += "=" * 60 + "\n\n"
+            matrix_content += f"{'Device':<15} {'Hostname':<20} Services\n"
+            matrix_content += "-" * 80 + "\n"
+    
+            # Create matrix rows
+            for device_ip in sorted(device_services.keys()):
+                device_info = self.discovered_hosts.get(device_ip, {})
+                hostname = device_info.get('hostname', 'Unknown')[:18]
+        
+                services = device_services[device_ip]
+                service_list = ", ".join(sorted(services)[:5])  # Show first 5 services
+                if len(services) > 5:
+                    service_list += f" (+{len(services)-5} more)"
+        
+                matrix_content += f"{device_ip:<15} {hostname:<20} {service_list}\n"
+    
+            matrix_text.insert(1.0, matrix_content)
+            matrix_text.config(state=tk.DISABLED)  # Make read-only
+
+        def create_legend_mappings(self):
+            """Enhanced device mappings including connection-aware colors"""
+            # This should be your existing create_legend_mappings method
+            # but you might want to add some connection-aware enhancements
+    
+            return {
+                'Gateway (.1/.254)': {'color': '#E74C3C', 'priority': 1},
+                'Router/Gateway': {'color': '#E74C3C', 'priority': 2},
+                'Router/Switch': {'color': '#3498DB', 'priority': 3},
+                'Router/Network Device': {'color': '#3498DB', 'priority': 4},
+                'Router': {'color': '#E74C3C', 'priority': 5},
+                'Switch': {'color': '#2980B9', 'priority': 6},
+                'Access Point': {'color': '#8E44AD', 'priority': 7},
+                'Server/Web Device': {'color': '#27AE60', 'priority': 8},
+                'Windows Host': {'color': '#F39C12', 'priority': 9},
+                'Linux Host': {'color': '#E67E22', 'priority': 10},
+                'IP Camera/CCTV': {'color': '#9B59B6', 'priority': 11},
+                'IP Camera': {'color': '#9B59B6', 'priority': 12},
+                'Mobile Device': {'color': '#16A085', 'priority': 13},
+                'Network Device': {'color': '#34495E', 'priority': 14},
+                'Host (Filtered/Mobile)': {'color': '#95A5A6', 'priority': 15},
+                'Unknown': {'color': '#BDC3C7', 'priority': 16}
+            }
+
+        # MODIFICATION TO YOUR EXISTING scan_complete METHOD
+        def scan_complete(self):
+            """Called when scan is complete - now includes port connection detection"""
+            self.scanning = False
+            self.progress.stop()
+            self.scan_button.config(state=tk.NORMAL)
+            self.stop_button.config(state=tk.DISABLED)
+    
+            if self.discovered_hosts:
+                self.export_button.config(state=tk.NORMAL)
+                self.view_map_button.config(state=tk.NORMAL)
+                self.update_results()
+        
+                # ADDITION: Detect port connections after scan completes
+                print("DEBUG: Scan complete, analyzing port connections...")
+                try:
+                    self.detect_port_connections()
+                    connection_count = len(self.port_connections) if hasattr(self, 'port_connections') else 0
+                    print(f"DEBUG: Detected {connection_count} port connections")
+                except Exception as e:
+                    print(f"DEBUG: Port connection detection failed: {e}")
+                    self.port_connections = {}
+        
+                self.status_var.set(f"Scan complete. Found {len(self.discovered_hosts)} hosts, {len(self.port_connections) if hasattr(self, 'port_connections') else 0} connections.")
+            else:
+                self.status_var.set("Scan complete. No hosts found.")
+    
+   
+        # HELPER METHOD FOR PORT CONNECTION EXPORT
+        def export_port_connections_csv(self):
+            """Export port connections to CSV file"""
+    
+            if not hasattr(self, 'port_connections') or not self.port_connections:
+                messagebox.showwarning("Export Warning", "No port connections to export.")
+                return
+    
+            filename = filedialog.asksaveasfilename(
+                defaultextension=".csv",
+                filetypes=[("CSV files", "*.csv"), ("All files", "*.*")],
+                title="Export Port Connections"
+            )
+    
+            if filename:
+                try:
+                    import csv
+                    with open(filename, 'w', newline='', encoding='utf-8') as csvfile:
+                        fieldnames = ['Source_IP', 'Source_Port', 'Destination_IP', 'Destination_Port', 
+                                    'Service', 'Connection_Type', 'Bidirectional', 'Strength']
+                        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+                
+                        writer.writeheader()
+                        for connection in self.port_connections.values():
+                            writer.writerow({
+                                'Source_IP': connection['source_ip'],
+                                'Source_Port': connection.get('source_port', ''),
+                                'Destination_IP': connection['dest_ip'], 
+                                'Destination_Port': connection.get('dest_port', ''),
+                                'Service': connection.get('service', ''),
+                                'Connection_Type': connection.get('connection_type', ''),
+                                'Bidirectional': connection.get('bidirectional', False),
+                                'Strength': connection.get('strength', 0.5)
+                            })
+            
+                    messagebox.showinfo("Export Success", f"Port connections exported to {filename}")
+            
+                except Exception as e:
+                    messagebox.showerror("Export Error", f"Failed to export port connections: {str(e)}")
+
+        def export_topology_with_connections_png(self, fig):
+            """Export topology with port connections as PNG"""
+            filename = filedialog.asksaveasfilename(
+                defaultextension=".png",
+                filetypes=[("PNG files", "*.png"), ("All files", "*.*")],
+                title="Export Network Topology with Connections"
+            )
+    
+            if filename:
+                try:
+                    # Ensure port connections are visible before export
+                    if hasattr(self, 'show_port_connections') and self.show_port_connections.get():
+                        fig.savefig(filename, dpi=300, bbox_inches='tight', 
+                                facecolor='white', edgecolor='none')
+                    else:
+                        fig.savefig(filename, dpi=300, bbox_inches='tight',
+                                facecolor='white', edgecolor='none') 
+            
+                    messagebox.showinfo("Export Success", f"Topology with connections saved as {filename}")
+                except Exception as e:
+                    messagebox.showerror("Export Error", f"Failed to export image: {str(e)}")
+
+        
+    
+def main():
+    root = tk.Tk()
+    app = NetworkScannerGUI(root)
+    root.mainloop()
+    
+if __name__ == "__main__":
+    main()
+    
